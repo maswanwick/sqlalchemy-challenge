@@ -68,8 +68,28 @@ def get_precipitation_data():
         measurement_dict[date] = prcp
         all_measurements.append(measurement_dict)
     
-    # return a list of date/precipitation key/value pairs as json
+    # Return a list of date/precipitation key/value pairs as json
     return jsonify(all_measurements)
+
+@app.route("/api/v1.0/stations")
+def get_stations():
+    
+    # Select all fields from the station table
+    station_results = session.query(Station.station, Station.name, Station.latitude, Station.longitude, Station.elevation).all()
+
+    # For each result, add the fields a dictionary object and append to the results list
+    all_stations = []
+    for station, name, latitude, longitude, elevation in station_results:
+        station_dict = {}
+        station_dict['station'] = station
+        station_dict['name'] = name
+        station_dict['latitude'] = latitude
+        station_dict['longitude'] = longitude
+        station_dict['elevation'] = elevation
+        all_stations.append(station_dict)
+    
+    # Return a list of station dictionary objects as json
+    return jsonify(all_stations)
 
 if __name__ == '__main__':
     app.run(debug=True)
