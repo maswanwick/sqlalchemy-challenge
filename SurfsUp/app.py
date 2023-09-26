@@ -91,5 +91,32 @@ def get_stations():
     # Return a list of station dictionary objects as json
     return jsonify(all_stations)
 
+@app.route("/api/v1.0/tobs")
+def get_temp_observations():
+
+    # Get the station that has had the most measurements (ie - most active)
+    most_active_station_id = session.query(Measurement.station).group_by(Measurement.station).order_by(func.count(Measurement.station).desc()).first()
+    
+    # Retrieve the latest observation date and covert it to a datetime object
+    max_date = session.query(func.max(Measurement.date)).filter(Measurement.station == most_active_station_id[0]).group_by(Measurement.station).first()
+    end_date = dt.datetime.strptime(max_date[0], '%Y-%m-%d')
+
+    # Calculate a year in the past
+    start_date = end_date - dt.timedelta(days=366)
+    
+    # Select the date and temperature (tobs) for the most active station where the observation date is in the past year
+    temperature_results = session.query(Measurement.date, Measurement.tobs).filter(Measurement.station == most_active_station_id[0], Measurement.date.between(start_date, end_date))
+
+    # For each result, add the date and temperature to a dictionary and append the dictionary object to a list
+    all_temperatures = []
+    for date, tobs in temperature_results:
+        temperature_dict = {}
+        temperature_dict['date'] = date
+        temperature_dict['tobs'] = tobs
+        all_temperatures.append(temperature_dict)
+
+    # Return a list of date/temperature objects as json
+    return jsonify(all_temperatures)
+
 if __name__ == '__main__':
     app.run(debug=True)
